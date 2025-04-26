@@ -1,45 +1,81 @@
 [
   {
-    "name": "test",
+    "name": "user-data",
+    "description": "Configuration for user-data",
+    "createdAt": "2025-04-26T15:21:28.525Z",
+    "updatedAt": "2025-04-26T15:21:31.719Z",
     "headers": [
       {
+        "id": "6938c1db-448f-4dcd-a04a-95cc5e27966c",
         "key": "name",
-        "name": "father name",
-        "enabled": true,
+        "name": "Name",
+        "description": "Full name of the person submitting the form",
         "dataType": "text",
-        "required": true
+        "required": true,
+        "enabled": true,
+        "placeholder": "Enter your full name",
+        "defaultValue": "",
+        "order": 1
       },
       {
+        "id": "ac49b734-8d29-4d0d-ba4b-36ced29b7912",
         "key": "email",
         "name": "Email",
-        "enabled": true
+        "description": "Email address for contact purposes",
+        "dataType": "email",
+        "required": true,
+        "enabled": true,
+        "placeholder": "Enter your email address",
+        "defaultValue": "",
+        "validationRules": [
+          {
+            "type": "regex",
+            "value": "^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$",
+            "message": "Please enter a valid email address"
+          }
+        ],
+        "order": 2
       },
       {
+        "id": "e1087315-b580-412d-b072-0abeaa8180c8",
         "key": "phone",
         "name": "Phone",
-        "enabled": true
-      },
-      {
-        "key": "message",
-        "name": "Message",
-        "enabled": true
-      },
-      {
-        "id": "b087b83e-abfe-497a-9add-0686350ec1fd",
-        "key": "field_1745679501139",
-        "name": "Mother name",
-        "description": "Description for the new field",
-        "dataType": "text",
+        "description": "Phone number with country code",
+        "dataType": "phone",
         "required": false,
         "enabled": true,
-        "placeholder": "Enter your mother name",
+        "placeholder": "Enter your phone number with country code",
         "defaultValue": "",
-        "order": 5
+        "validationRules": [
+          {
+            "type": "regex",
+            "value": "^\\+?[0-9]{10,15}$",
+            "message": "Please enter a valid phone number (10-15 digits)"
+          }
+        ],
+        "order": 3
+      },
+      {
+        "id": "3d63e825-2e04-45ab-9088-ab107ed2112d",
+        "key": "message",
+        "name": "Message",
+        "description": "Detailed message or inquiry",
+        "dataType": "textarea",
+        "required": true,
+        "enabled": true,
+        "placeholder": "Enter your message or inquiry",
+        "defaultValue": "",
+        "validationRules": [
+          {
+            "type": "min",
+            "value": 10,
+            "message": "Message must be at least 10 characters"
+          }
+        ],
+        "order": 4
       }
     ],
     "isDefault": true,
-    "id": "51e3de25-a2c6-4cfc-b998-f9420e6f0577",
-    "description": "",
-    "updatedAt": "2025-04-26T15:15:38.725Z"
+    "id": "6ea08862-5c81-410b-b14e-6db39ee32e45"
   }
 ]
