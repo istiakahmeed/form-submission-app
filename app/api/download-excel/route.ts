@@ -24,11 +24,16 @@ export async function GET(request: NextRequest) {
     // Read file
     const fileBuffer = await readFile(filePath)
 
+    // Generate a filename with the current date
+    const date = new Date()
+    const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
+    const filename = `form-submissions-${formattedDate}.xlsx`
+
     // Return file as response
     return new NextResponse(fileBuffer, {
       headers: {
         "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        "Content-Disposition": "attachment; filename=user-submissions.xlsx",
+        "Content-Disposition": `attachment; filename=${filename}`,
       },
     })
   } catch (error) {

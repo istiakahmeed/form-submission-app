@@ -5,7 +5,7 @@ import { join } from "path";
 import * as XLSX from "xlsx";
 import { existsSync } from "fs";
 import { z } from "zod";
-import type { SheetConfig, Submission } from "@/lib/types";
+import type { SheetConfig, Submission, FieldDataType } from "@/lib/types";
 
 // Path for storing data
 const DATA_DIR = join(process.cwd(), "data");
@@ -16,11 +16,79 @@ const CONFIG_FILE = join(DATA_DIR, "sheet-configs.json");
 const DEFAULT_SHEET_CONFIG: SheetConfig = {
   id: "default",
   name: "Contact Form",
+  description: "Default contact form for collecting user information",
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
   headers: [
-    { key: "name", name: "Name", enabled: true },
-    { key: "email", name: "Email", enabled: true },
-    { key: "phone", name: "Phone", enabled: true },
-    { key: "message", name: "Message", enabled: true },
+    {
+      id: crypto.randomUUID(),
+      key: "name",
+      name: "Name",
+      description: "Full name of the person submitting the form",
+      dataType: "text" as FieldDataType,
+      required: true,
+      enabled: true,
+      placeholder: "Enter your full name",
+      defaultValue: "",
+      order: 1,
+    },
+    {
+      id: crypto.randomUUID(),
+      key: "email",
+      name: "Email",
+      description: "Email address for contact purposes",
+      dataType: "email" as FieldDataType,
+      required: true,
+      enabled: true,
+      placeholder: "Enter your email address",
+      defaultValue: "",
+      validationRules: [
+        {
+          type: "regex",
+          value: "^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$",
+          message: "Please enter a valid email address",
+        },
+      ],
+      order: 2,
+    },
+    {
+      id: crypto.randomUUID(),
+      key: "phone",
+      name: "Phone",
+      description: "Phone number with country code",
+      dataType: "phone" as FieldDataType,
+      required: false,
+      enabled: true,
+      placeholder: "Enter your phone number with country code",
+      defaultValue: "",
+      validationRules: [
+        {
+          type: "regex",
+          value: "^\\+?[0-9]{10,15}$",
+          message: "Please enter a valid phone number (10-15 digits)",
+        },
+      ],
+      order: 3,
+    },
+    {
+      id: crypto.randomUUID(),
+      key: "message",
+      name: "Message",
+      description: "Detailed message or inquiry",
+      dataType: "textarea" as FieldDataType,
+      required: true,
+      enabled: true,
+      placeholder: "Enter your message or inquiry",
+      defaultValue: "",
+      validationRules: [
+        {
+          type: "min",
+          value: 10,
+          message: "Message must be at least 10 characters",
+        },
+      ],
+      order: 4,
+    },
   ],
   isDefault: true,
 };
@@ -88,15 +156,38 @@ async function loadSubmissions(): Promise<Submission[]> {
         DEFAULT_SHEET_CONFIG;
 
       // Convert each row to a submission
-      sheetData.forEach((row) => {
-        if (row.id && row.submittedAt) {
-          allSubmissions.push({
-            id: row.id,
-            sheetId: sheetConfig.id,
-            data: { ...row },
-            submittedAt: row.submittedAt,
-          });
-        }
+      sheetData.forEach((row, index) => {
+        // Create a data object with keys from the sheet config
+        const data: Record<string, any> = {};
+
+        // Map the Excel column names (which are header names) back to header keys
+        sheetConfig.headers.forEach((header) => {
+          if (header.enabled) {
+            // The Excel column has the header name, but we need to store by key
+            data[header.key] = row[header.name] || "";
+          }
+        });
+
+        // Generate a unique ID for this submission if it doesn't have one
+        // Since we're not storing IDs in Excel anymore, we need to generate them
+        const submissionId = crypto.randomUUID();
+
+        // Use the current timestamp for submissions without timestamps
+        // We'll offset them slightly to maintain order
+        const timestamp = new Date();
+        timestamp.setMinutes(
+          timestamp.getMinutes() - (sheetData.length - index)
+        );
+
+        allSubmissions.push({
+          id: submissionId,
+          sheetId: sheetConfig.id,
+          data: data,
+          submittedAt: timestamp.toISOString(),
+          updatedAt: timestamp.toISOString(),
+          status: "read", // Mark imported submissions as read
+          notes: "",
+        });
       });
     }
 
@@ -130,14 +221,14 @@ async function saveSubmissionsToExcel(data: Submission[]) {
 
       // Transform submissions to match the sheet's headers
       const worksheetData = sheetSubmissions.map((submission) => {
-        const row: Record<string, any> = {
-          id: submission.id,
-          submittedAt: submission.submittedAt,
-        };
+        // Only include the actual form field data, no metadata
+        const row: Record<string, any> = {};
 
-        // Add data for each enabled header
+        // Add data for each enabled header using the key for data lookup
+        // but the current name for the column header
         config.headers.forEach((header) => {
           if (header.enabled) {
+            // Use the header key to look up data, but use the header name for the column
             row[header.name] = submission.data[header.key] || "";
           }
         });
@@ -175,6 +266,79 @@ async function initializeData() {
   }
 }
 
+// Create validation schema based on field configuration
+function createValidationForField(header: SheetConfig["headers"][0]) {
+  let fieldSchema: any = z.string();
+
+  // Apply required validation
+  if (header.required) {
+    fieldSchema = fieldSchema.min(1, { message: `${header.name} is required` });
+  } else {
+    fieldSchema = fieldSchema.optional();
+  }
+
+  // Apply data type specific validation
+  switch (header.dataType) {
+    case "email":
+      fieldSchema = fieldSchema.email({
+        message: `Please enter a valid email address`,
+      });
+      break;
+    case "phone":
+      fieldSchema = fieldSchema.regex(/^\+?[0-9]{10,15}$/, {
+        message: `Please enter a valid phone number (10-15 digits)`,
+      });
+      break;
+    case "number":
+      fieldSchema = z.preprocess(
+        (val) => (val === "" ? undefined : Number(val)),
+        z
+          .number({ invalid_type_error: `${header.name} must be a number` })
+          .optional()
+      );
+      break;
+    case "date":
+      fieldSchema = z.preprocess(
+        (val) => (val === "" ? undefined : new Date(val as string)),
+        z
+          .date({ invalid_type_error: `${header.name} must be a valid date` })
+          .optional()
+      );
+      break;
+  }
+
+  // Apply custom validation rules
+  if (header.validationRules && header.validationRules.length > 0) {
+    header.validationRules.forEach((rule) => {
+      switch (rule.type) {
+        case "min":
+          if (typeof rule.value === "number") {
+            fieldSchema = fieldSchema.min(rule.value, {
+              message: rule.message,
+            });
+          }
+          break;
+        case "max":
+          if (typeof rule.value === "number") {
+            fieldSchema = fieldSchema.max(rule.value, {
+              message: rule.message,
+            });
+          }
+          break;
+        case "regex":
+          if (typeof rule.value === "string") {
+            fieldSchema = fieldSchema.regex(new RegExp(rule.value), {
+              message: rule.message,
+            });
+          }
+          break;
+      }
+    });
+  }
+
+  return fieldSchema;
+}
+
 // Form validation schema - dynamically created based on the default sheet
 function createFormSchema() {
   const schemaObj: Record<string, any> = {};
@@ -184,31 +348,7 @@ function createFormSchema() {
 
   defaultSheet.headers.forEach((header) => {
     if (header.enabled) {
-      switch (header.key) {
-        case "email":
-          schemaObj[header.key] = z
-            .string()
-            .email({ message: `Please enter a valid email address.` });
-          break;
-        case "phone":
-          schemaObj[header.key] = z.string().regex(/^\+?[0-9]{10,15}$/, {
-            message: `Please enter a valid phone number (10-15 digits).`,
-          });
-          break;
-        case "message":
-          schemaObj[header.key] = z
-            .string()
-            .min(10, {
-              message: `${header.name} must be at least 10 characters.`,
-            });
-          break;
-        default:
-          schemaObj[header.key] = z
-            .string()
-            .min(2, {
-              message: `${header.name} must be at least 2 characters.`,
-            });
-      }
+      schemaObj[header.key] = createValidationForField(header);
     }
   });
 
@@ -234,6 +374,9 @@ export async function submitFormData(formData: unknown) {
       sheetId: defaultSheet.id,
       data: validatedData,
       submittedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      status: "new",
+      notes: "",
     };
 
     // Add to in-memory array
@@ -249,6 +392,7 @@ export async function submitFormData(formData: unknown) {
       return {
         success: false,
         error: "Validation failed. Please check your input.",
+        validationErrors: error.errors,
       };
     }
     return {
@@ -279,9 +423,26 @@ export async function getSheetConfigs() {
 export async function createSheetConfig(config: Omit<SheetConfig, "id">) {
   await initializeData();
 
+  // Ensure each header has an id and required fields
+  const headersWithIds = config.headers.map((header, index) => ({
+    ...header,
+    id: header.id || crypto.randomUUID(),
+    description: header.description || `Field for ${header.name}`,
+    dataType: header.dataType || "text",
+    required: header.required !== undefined ? header.required : false,
+    placeholder: header.placeholder || `Enter ${header.name.toLowerCase()}...`,
+    order: header.order || index + 1,
+  }));
+
+  const timestamp = new Date().toISOString();
+
   const newConfig: SheetConfig = {
     ...config,
+    headers: headersWithIds,
     id: crypto.randomUUID(),
+    description: config.description || `${config.name} configuration`,
+    createdAt: timestamp,
+    updatedAt: timestamp,
   };
 
   // If this is marked as default, update other sheets
@@ -320,10 +481,11 @@ export async function updateSheetConfig(
     }));
   }
 
-  // Update the config
+  // Update the config with the current timestamp
   sheetConfigs[configIndex] = {
     ...sheetConfigs[configIndex],
     ...updates,
+    updatedAt: new Date().toISOString(),
   };
 
   await saveSheetConfigs(sheetConfigs);
@@ -359,6 +521,31 @@ export async function deleteSheetConfig(id: string) {
 
   await saveSheetConfigs(sheetConfigs);
   await saveSubmissionsToExcel(submissions); // Regenerate Excel without deleted sheet
+
+  return { success: true };
+}
+
+// Update submission status
+export async function updateSubmissionStatus(
+  id: string,
+  status: Submission["status"],
+  notes?: string
+) {
+  await initializeData();
+
+  const submissionIndex = submissions.findIndex((sub) => sub.id === id);
+  if (submissionIndex === -1) {
+    return { success: false, error: "Submission not found" };
+  }
+
+  submissions[submissionIndex] = {
+    ...submissions[submissionIndex],
+    status,
+    notes: notes !== undefined ? notes : submissions[submissionIndex].notes,
+    updatedAt: new Date().toISOString(),
+  };
+
+  await saveSubmissionsToExcel(submissions);
 
   return { success: true };
 }

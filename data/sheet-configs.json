@@ -1,38 +1,13 @@
 [
   {
-    "name": "cv-data",
-    "headers": [
-      {
-        "key": "name",
-        "name": "Name",
-        "enabled": true
-      },
-      {
-        "key": "email",
-        "name": "Email",
-        "enabled": true
-      },
-      {
-        "key": "phone",
-        "name": "Phone",
-        "enabled": false
-      },
-      {
-        "key": "message",
-        "name": "Message",
-        "enabled": false
-      }
-    ],
-    "isDefault": false,
-    "id": "e2e208c4-3f4d-4016-abae-4b64568817c5"
-  },
-  {
     "name": "test",
     "headers": [
       {
         "key": "name",
-        "name": "Name",
-        "enabled": true
+        "name": "father name",
+        "enabled": true,
+        "dataType": "text",
+        "required": true
       },
       {
         "key": "email",
@@ -48,9 +23,23 @@
         "key": "message",
         "name": "Message",
         "enabled": true
+      },
+      {
+        "id": "b087b83e-abfe-497a-9add-0686350ec1fd",
+        "key": "field_1745679501139",
+        "name": "Mother name",
+        "description": "Description for the new field",
+        "dataType": "text",
+        "required": false,
+        "enabled": true,
+        "placeholder": "Enter your mother name",
+        "defaultValue": "",
+        "order": 5
       }
     ],
     "isDefault": true,
-    "id": "51e3de25-a2c6-4cfc-b998-f9420e6f0577"
+    "id": "51e3de25-a2c6-4cfc-b998-f9420e6f0577",
+    "description": "",
+    "updatedAt": "2025-04-26T15:15:38.725Z"
   }
 ]
