@@ -9,7 +9,7 @@ importers:
   .:
     dependencies:
       '@hookform/resolvers':
-        specifier: latest
+        specifier: ^5.0.1
         version: 5.0.1(react-hook-form@7.56.1(react@19.1.0))
       '@radix-ui/react-accordion':
         specifier: 1.2.2
@@ -111,13 +111,13 @@ importers:
         specifier: 8.5.1
         version: 8.5.1(react@19.1.0)
       fs:
-        specifier: latest
+        specifier: 0.0.1-security
         version: 0.0.1-security
       input-otp:
         specifier: 1.4.1
         version: 1.4.1(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       jose:
-        specifier: latest
+        specifier: ^6.0.10
         version: 6.0.10
       lucide-react:
         specifier: ^0.454.0
@@ -129,7 +129,7 @@ importers:
         specifier: ^0.4.4
         version: 0.4.6(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       path:
-        specifier: latest
+        specifier: ^0.12.7
         version: 0.12.7
       react:
         specifier: ^19
@@ -141,7 +141,7 @@ importers:
         specifier: ^19
         version: 19.1.0(react@19.1.0)
       react-hook-form:
-        specifier: latest
+        specifier: ^7.56.1
         version: 7.56.1(react@19.1.0)
       react-resizable-panels:
         specifier: ^2.1.7
@@ -162,10 +162,10 @@ importers:
         specifier: ^0.9.6
         version: 0.9.9(@types/react-dom@19.1.2(@types/react@19.1.2))(@types/react@19.1.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       xlsx:
-        specifier: latest
+        specifier: ^0.18.5
         version: 0.18.5
       zod:
-        specifier: latest
+        specifier: ^3.24.3
         version: 3.24.3
     devDependencies:
       '@types/node':

@@ -1,8 +1,9 @@
+import Link from "next/link"
 import { Suspense } from "react"
-import { getSubmissions } from "@/app/actions/form-actions"
+import { getSubmissions, getSheetConfigs } from "@/app/actions/form-actions"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Download, LogOut } from "lucide-react"
+import { Download, LogOut, Settings } from "lucide-react"
 import { logoutAdmin } from "@/app/actions/auth-actions"
 import SubmissionsTable from "@/components/submissions-table"
 
@@ -12,16 +13,25 @@ export default function AdminDashboard() {
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-          <form action={logoutAdmin}>
-            <Button variant="outline" size="sm">
-              <LogOut className="h-4 w-4 mr-2" />
-              Logout
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/admin/sheets">
+                <Settings className="h-4 w-4 mr-2" />
+                Manage Sheets
+              </Link>
             </Button>
-          </form>
+            <form action={logoutAdmin}>
+              <Button variant="outline" size="sm">
+                <LogOut className="h-4 w-4 mr-2" />
+                Logout
+              </Button>
+            </form>
+          </div>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
           <SubmissionStatsCard />
+          <SheetStatsCard />
           <DownloadExcelCard />
         </div>
 
@@ -71,6 +81,22 @@ function DownloadExcelCard() {
             Download Excel File
           </a>
         </Button>
+      </CardContent>
+    </Card>
+  )
+}
+
+async function SheetStatsCard() {
+  const sheets = await getSheetConfigs()
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle>Sheet Types</CardTitle>
+        <CardDescription>Number of configured sheets</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <p className="text-4xl font-bold">{sheets.length}</p>
       </CardContent>
     </Card>
   )
